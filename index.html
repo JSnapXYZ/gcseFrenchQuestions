@@ -48,7 +48,7 @@
 
     async function generatePrompt() {
       const count = document.getElementById("wordCount").value;
-      const input = `Generate a GCSE French writing question in English. The answer should be about ${count} words.`;
+      const input = `Generate a GCSE French writing question in English. It should be for a  ${count} word question based on GSCE French.. Do not give a sample answer.`;
 
       try {
         const data = await callOpenRouter(input);
@@ -71,7 +71,7 @@
         return;
       }
 
-      const inputText = `Provide constructive feedback in English for this student's answer to the following question:\n\nQuestion: ${prompt}\n\nStudent's answer: ${response}\n\nFeedback:`;
+      const inputText = `Provide constructive feedback in English for this student's answer to the following question:\n\nQuestion: ${prompt}\n\nStudent's answer: ${response}\n\nFeedback: Give a mark depending on the question.`;
 
       try {
         const data = await callOpenRouter(inputText);
