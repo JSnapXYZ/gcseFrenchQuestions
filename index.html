@@ -30,28 +30,36 @@
   </div>
 
   <script>
-    const MODEL_URL = "https://api-inference.huggingface.co/models/bigscience/bloom";
+    async function callOpenRouter(prompt) {
+      const res = await fetch('/api/openrouter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt })
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Request failed');
+      }
+
+      const data = await res.json();
+      return data;
+    }
 
     async function generatePrompt() {
       const count = document.getElementById("wordCount").value;
       const input = `Generate a GCSE French writing question in English. The answer should be about ${count} words.`;
 
-      const reply = await fetch(MODEL_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ inputs: input })
-      });
-
-      const data = await reply.json();
-
-      // Bloom returns a text continuation starting with the prompt; trim prompt part
-      let generated = "No question generated.";
-      if (data && data.length && data[0].generated_text) {
-        generated = data[0].generated_text.replace(input, "").trim();
-        if (!generated) generated = data[0].generated_text.trim();
+      try {
+        const data = await callOpenRouter(input);
+        // The OpenRouter GPT-like API returns choices with messages
+        const generated = data.choices?.[0]?.message?.content || "No question generated.";
+        document.getElementById("prompt").innerText = generated.trim();
+        document.getElementById("feedback").innerText = "";  // Clear old feedback
+        document.getElementById("response").value = "";      // Clear old response
+      } catch (error) {
+        alert("Error generating question: " + error.message);
       }
-
-      document.getElementById("prompt").innerText = generated;
     }
 
     async function getFeedback() {
@@ -65,21 +73,13 @@
 
       const inputText = `Provide constructive feedback in English for this student's answer to the following question:\n\nQuestion: ${prompt}\n\nStudent's answer: ${response}\n\nFeedback:`;
 
-      const reply = await fetch(MODEL_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ inputs: inputText })
-      });
-
-      const data = await reply.json();
-
-      let feedback = "No feedback found.";
-      if (data && data.length && data[0].generated_text) {
-        feedback = data[0].generated_text.replace(inputText, "").trim();
-        if (!feedback) feedback = data[0].generated_text.trim();
+      try {
+        const data = await callOpenRouter(inputText);
+        const feedback = data.choices?.[0]?.message?.content || "No feedback found.";
+        document.getElementById("feedback").innerText = feedback.trim();
+      } catch (error) {
+        alert("Error getting feedback: " + error.message);
       }
-
-      document.getElementById("feedback").innerText = feedback;
     }
   </script>
 </body>
